@@ -9,7 +9,7 @@ def parseArgs():
         - repo (string) : git repo to be scanned """
     # Parsing arguments
     if len(sys.argv) != 2:
-        print("Please supply a git repo to scan")
+        print("Please supply a git repo to scan \nUsage: python3 nt-vuln.py [git repo]")
         exit()
 
     repo = sys.argv[1]
@@ -152,7 +152,16 @@ def presentResults(scanResults):
     else:
         print(f"Top {min(10, len(rated))} vulnerabilities:")
         for i in range(min( 10, len(rated))):
-            print(f"{i+1:4} : {rated[i][0]:20} ({rated[i][1]} CVSS)")
+            # Print base information - cve and rating
+            print(f'{i+1:4} : {rated[i][0]:20} ({rated[i][1]} CVSS)')
+
+            # Additional information
+            srv = [v for v in scanResults["vulnerabilities"] if v["id"] == rated[i][0]][0]
+            print(f'\tAffects {srv["affects"][0]["ref"]}')
+            # Rated serverities
+            print(f"\tSeverity: ")
+            for rating in srv["ratings"]:
+                print(f'\t\t {rating["severity"]:10} (source: {rating["source"]["name"]})')
 
     # Inform about vulnerabilities with no associated CVSS score
     if len(unrated) != 0:
