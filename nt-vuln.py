@@ -13,7 +13,6 @@ def parseArgs():
         exit()
 
     repo = sys.argv[1]
-    print(f"Downloading the provided repo {repo}")
     return repo
 
 def setupWorkDir():
@@ -42,7 +41,7 @@ def cloneRepo(repoURL, workdir):
         - workdir (pathlib.Path) : Working directory
     Returns:
         - repodir (pathlib.Path) : Working directory"""
-    reponame = repoURL.split("/")[-1].strip(".git")
+    reponame = repoURL.split("/")[-1].removesuffix(".git")
     repodir = workdir / reponame
     # Pulling changes if the repo exists
     if repodir.exists():
@@ -76,6 +75,8 @@ def cloneRepo(repoURL, workdir):
             print(f"Failed to clone git repo. ")
             print(e.stderr)
             exit()
+
+    # Check if the repos directory exists
     if not repodir.exists():
         print(f"Failed to clone git repo. Please provide a valid repository")
         print(res.stderr)
@@ -127,6 +128,7 @@ def presentResults(scanResults):
     rated = {}
     # Itterate through the vulnerabilities and find their hightst score
     # The rating key contains raitings, not all of which are CVSS ratings
+    # Different sources can give different scores. Sort by the most severe rating
     for vulnerability in scanResults["vulnerabilities"]:
         maxscore = -1
         for rating in vulnerability["ratings"]:
@@ -136,6 +138,7 @@ def presentResults(scanResults):
                         if rating["score"] > maxscore:
                             maxscore = rating["score"]
         if maxscore == -1:
+            # Seperate any vulnerabilities without any score
             unrated.append(vulnerability["id"])
         else:
             rated[vulnerability["id"]] = maxscore
@@ -149,7 +152,7 @@ def presentResults(scanResults):
     else:
         print(f"Top {min(10, len(rated))} vulnerabilities:")
         for i in range(min( 10, len(rated))):
-            print(f"{i+1:4} : {rated[i][0]:16} ({rated[i][1]} CVSS)")
+            print(f"{i+1:4} : {rated[i][0]:20} ({rated[i][1]} CVSS)")
 
     # Inform about vulnerabilities with no associated CVSS score
     if len(unrated) != 0:
