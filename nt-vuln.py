@@ -47,12 +47,18 @@ def cloneRepo(repoURL, workdir):
     # Pulling changes if the repo exists
     if repodir.exists():
         if repodir.is_dir():
-            print("Repo directory already exists, pulling repo")
+            print("Repo directory already exists, pulling repo to get most recent version")
             try:
-                res = subprocess.check_output(f"cd {repodir} && git pull", shell=True)
-                print(f"Res : {res}")
+                res = subprocess.run(
+                        f"cd {repodir} && git pull",                 
+                        shell=True, 
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True)
             except subprocess.CalledProcessError as e:
-                print(f"Failed to clone git repo. Please provide a valid repository")
+                print(f"Failed to pull git repo.")
+                print(e.stderr)
+                exit()
         else:
             print("File with repo name exists. Please move")
             exit()
@@ -60,13 +66,19 @@ def cloneRepo(repoURL, workdir):
         # Repo does not exist, clone it
         print(f"Cloning repo {reponame}")
         try:
-            res = subprocess.check_output(f"cd {workdir} && git clone {repoURL}", shell=True)
-            print(f"Res : {res}")
+            res = subprocess.run(
+                    f"cd {workdir} && git clone {repoURL}", 
+                    shell=True, 
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True)
         except subprocess.CalledProcessError as e:
-            print(f"Failed to clone git repo. Please provide a valid repository")
+            print(f"Failed to clone git repo. ")
+            print(e.stderr)
             exit()
     if not repodir.exists():
         print(f"Failed to clone git repo. Please provide a valid repository")
+        print(res.stderr)
         exit()
  
     return repodir
@@ -82,16 +94,25 @@ def scanRepo(repodir):
 
     # Scan the repository
     try:
-        res = subprocess.check_output(f"cd {repodir} && trivy fs --scanners vuln --format cyclonedx {repodir}", shell=True)
+        res = subprocess.run(
+                f"cd {repodir} && trivy fs --scanners vuln --format cyclonedx {repodir}", 
+                shell=True, 
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True)
+
     except subprocess.CalledProcessError as e:
         print(f"Failed to scan the repo. Please provide a valid repository")
+        print(e.stderr)
         exit()
 
     # Convert the resulting json to a python dictionary
     try:
-        results = json.loads(res)
+        results = json.loads(res.stdout)
     except:
         print("Failed to read Trivy output as JSON")
+        print(res.stderr)
+        exit()
 
     assert "vulnerabilities" in results, "Failed to read Trivy output as JSON"
 
