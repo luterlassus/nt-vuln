@@ -23,6 +23,13 @@ The tool assumes that a pre-existing folder in the ~/.nt-vuln directory with the
 Thus checking two repos with equeal names will actually only check the first repo twise.
 If you know this is the case, remove the first repos folder from ~/.nt-vuln before the second run of the tool.
 
+## Improvements
+Possible improvements includes 
+* Fixing the git folder name collision senario described above by verifying that the projects are the same.
+* Implementing better argument parsing to allow for more or less verbose output, specifying number of vulnerabilities to print, user specified work directory etc. 
+* Using more nt-vuln scanners or tools to get more information.
+* Automatic cleanup if specified by user.
+
 ## Limitations
 This tool uses Trivy to scan for vulnerabilities.
 It uses the vuln scanner, which looks for vulnerabilities based on lock files such as package-lock.json.
