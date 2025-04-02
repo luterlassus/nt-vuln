@@ -1,6 +1,7 @@
 import sys
-from pathlib import Path
 import subprocess
+import json
+from pathlib import Path
 
 def parseArgs():
     """Parse the arguments 
@@ -39,7 +40,7 @@ def cloneRepo(repoURL, workdir):
     Parameters:
         - repoURL (string) : URL of repo to be cloned
         - workdir (pathlib.Path) : Working directory
-    Returns
+    Returns:
         - repodir (pathlib.Path) : Working directory"""
     reponame = repoURL.split("/")[-1].strip(".git")
     repodir = workdir / reponame
@@ -63,8 +64,41 @@ def cloneRepo(repoURL, workdir):
             print(f"Res : {res}")
         except subprocess.CalledProcessError as e:
             print(f"Failed to clone git repo. Please provide a valid repository")
+            exit()
+    if not repodir.exists():
+        print(f"Failed to clone git repo. Please provide a valid repository")
+        exit()
+ 
+    return repodir
+
+def scanRepo(repodir):
+    """Scan the provided repo using Trivy
+    
+    Parameters:
+        - repodir (pathlib.Path) : Path of the repository to scan
+
+    Returns:
+        - results (dict) : dictionary containing the output of Trivy"""
+
+    # Scan the repository
+    try:
+        res = subprocess.check_output(f"cd {repodir} && trivy fs --scanners vuln --format cyclonedx {repodir}", shell=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to scan the repo. Please provide a valid repository")
+        exit()
+
+    # Convert the resulting json to a python dictionary
+    try:
+        results = json.loads(res)
+    except:
+        print("Failed to read Trivy output as JSON")
+
+    return results
 
 if __name__ == "__main__":
     repoURL = parseArgs()
     wd = setupWorkDir()
-    cloneRepo(repoURL, wd)
+    repodir = cloneRepo(repoURL, wd)
+    trivyResults = scanRepo(repodir)
+
+    print(trivyResults)
