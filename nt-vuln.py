@@ -93,12 +93,51 @@ def scanRepo(repodir):
     except:
         print("Failed to read Trivy output as JSON")
 
+    assert "vulnerabilities" in results, "Failed to read Trivy output as JSON"
+
     return results
+
+def presentResults(scanResults):
+    """Present the results from Trivy
+
+    Parameters:
+        - scanResults (dict) : Results from Trivy scan"""
+    unrated = []
+    rated = {}
+    # Itterate through the vulnerabilities and find their hightst score
+    # The rating key contains raitings, not all of which are CVSS ratings
+    for vulnerability in scanResults["vulnerabilities"]:
+        maxscore = -1
+        for rating in vulnerability["ratings"]:
+            if "method" in rating:
+                if "CVSS" in rating["method"]:
+                    if "score" in rating:
+                        if rating["score"] > maxscore:
+                            maxscore = rating["score"]
+        if maxscore == -1:
+            unrated.append(vulnerability["id"])
+        else:
+            rated[vulnerability["id"]] = maxscore
+
+    # Sorting the rated vulnerabilities
+    rated = (sorted(rated.items(), key=lambda item: item[1]))[::-1]
+
+    # Printing the results
+    if len(rated) == 0:
+        print("Trivey found no vulnerabilities with CVSS rating in the repo")
+    else:
+        print(f"Top {min(10, len(rated))} vulnerabilities:")
+        for i in range(min( 10, len(rated))):
+            print(f"{i+1:4} : {rated[i][0]:16} ({rated[i][1]} CVSS)")
+
+    # Inform about vulnerabilities with no associated CVSS score
+    if len(unrated) != 0:
+        print(f"Trivy also found {len(unrated)} vulnerabilities with no associated CVSS score.")
+
 
 if __name__ == "__main__":
     repoURL = parseArgs()
     wd = setupWorkDir()
     repodir = cloneRepo(repoURL, wd)
     trivyResults = scanRepo(repodir)
-
-    print(trivyResults)
+    presentResults(trivyResults)
