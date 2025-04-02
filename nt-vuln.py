@@ -157,7 +157,7 @@ def presentResults(scanResults):
 
             # Additional information
             srv = [v for v in scanResults["vulnerabilities"] if v["id"] == rated[i][0]][0]
-            print(f'\tAffects {srv["affects"][0]["ref"]}')
+            print(f'\tAffects : \n\t\t {srv["affects"][0]["ref"]}')
             # Rated serverities
             print(f"\tSeverity: ")
             for rating in srv["ratings"]:
